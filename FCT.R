@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:40) 
 ## Version: 
-## Last-Updated: jan 23 2025 (12:16) 
+## Last-Updated: feb  4 2025 (17:54) 
 ##           By: Brice Ozenne
-##     Update #: 98
+##     Update #: 114
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -209,9 +209,9 @@ runCor <- function(formula, data){
     ## (eRho.lmm["rho(1,2,dt=0)"]-eRho.lmm["rho(1,2,dt=1)"])/sqrt(prod(1-eRho.lmm[c("rho1","rho2")]))
 
     ## ** export
-    out <- rbind(data.table(method = "averageSignal", type = "conditional",
+    out <- rbind(data.table(method = "averageSignal", type = "unclear",
                             estimate = cor.meanRegion$estimate, lower = cor.meanRegion$conf.int[1], upper = cor.meanRegion$conf.int[2], p.value = cor.meanRegion$p.value),
-                 data.table(method = "averageCor", type = "conditional",
+                 data.table(method = "averageCor", type = "marginal",
                             estimate = mean.regionalCor, lower = ci.regionalCor[1], upper = ci.regionalCor[2], p.value = pvalue.regionalCor),
                  data.table(method = "averageId", type = "conditional",
                             estimate = meanCor.individual, lower = ci.individual[1], upper = ci.individual[2], p.value = pvalue.individual),
@@ -347,111 +347,6 @@ plotCor <- function(data, type.norm, n.id = 4, widths = c(1.5,0.5), round.dotplo
 }
 
 
-## * IFcor (documentation)
-##' @title Pearson's correlation with robust standard error 
-##' @examples
-##' df <- simData(seed = 1, n.obs = 2,
-##'              mu.PET = 1:10,
-##'              mu.fMRI = 1:10,
-##'              rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.1, rho.conditional = 0.05,
-##'              sigma.PET = 3, sigma.fMRI = 5)
-##' df$id <- 1:NROW(df)
-##' cor.test(df$PET,df$fMRI)
-##' ## 0.681272 ([0.3417944 0.8634749], p-value = 0.000942)
-##' cor.testIID(df$PET,df$fMRI, transform = FALSE)
-##' ## 0.681272 ([0.4065485 0.9559955] p-value = 1.171e-06)
-##' cor.testIID(df$PET,df$fMRI, transform = TRUE)
-##' ## 0.681272 ([0.3084344 0.8726663] p-value = 0.001479)
-##'
-##' ## gold standard
-##' library(lava)
-##' Cov <- function(x, y, ...) {
-##'     est <- mean(x * y)-mean(x)*mean(y)
-##'     estimate(
-##'         coef = est,
-##'         IC = (x - mean(x)) * (y - mean(y)) - est,
-##'         ...
-##'     )
-##' }
-##' e2 <- with(df, Cov(PET, fMRI, labels = "c", id = id) +
-##'                Cov(PET, PET, labels = "v1", id = id) +
-##'                Cov(fMRI, fMRI, labels = "v2", id = id))
-##' rho <- estimate(e2, function(x) list(rho = x[1] / (x[2] * x[3])^.5))
-##' rho
-##' ##       Estimate Std.Err   2.5%  97.5% P-value
-##' ## rho   0.6813  0.1402 0.4065 0.956 1.171e-06
-##' estimate(rho, atanh, back.transform = tanh)
-##' ##       Estimate Std.Err   2.5%  97.5% P-value
-##' ## rho   0.6813          0.3084 0.8727 0.001479
-
-## * IFcor (code)
-cor.testIID <- function(x, y, conf.level = 0.95, transform = TRUE, fast = TRUE){
-
-
-    ## ** take care of missing data
-    if(any(is.na(x)) || any(is.na(y))){
-        out <- cor.testIID(x[!is.na(x) & !is.na(y)],y[!is.na(x) & !is.na(y)])
-        iid.save <- out$iid
-        out$iid <- matrix(0, nrow = length(x), ncol = 2, dimnames = list(NULL, c("original","atanh")))
-        out$iid[!is.na(x) & !is.na(y),] <- iid.save
-        return(out)
-    }
-
-    ## ** no missing data
-    n.obs <- length(x)
-
-    if(fast){
-        ## *** standardize
-        x.norm <- as.double(scale(x))
-        y.norm <- as.double(scale(y))
-
-        e.cor <- sum(x.norm*y.norm)/(n.obs-1)
-        IF.rho <- n.obs/(n.obs-1) * ((x.norm*y.norm) - e.cor*(x.norm^2+y.norm^2)/2)
-
-    }else{
-        ## *** original
-        ## precompute
-        mu.x <- mean(x)
-        mu.x2 <- mean(x^2)
-        mu.y <- mean(y)
-        mu.y2 <- mean(y^2)
-        mu.xy <- mean(x*y)
-        x.center <- (x - mu.x)
-        y.center <- (y - mu.y)
-
-        ## point estimate
-        e.num <- mu.xy-mu.x*mu.y
-        e.denom1 <- (mu.x2-mu.x^2)
-        e.denom2 <- (mu.y2-mu.y^2)
-        e.cor <- e.num/sqrt(e.denom1*e.denom2)
-
-        ## influence function
-        ## https://cran.r-project.org/web/packages/lava/vignettes/influencefunction.html#example-pearson-correlation
-        IF.num <- x.center*y.center - e.num
-        IF.denom1 <- x.center^2 - e.denom1
-        IF.denom2 <- y.center^2 - e.denom2
-        IF.denom <- IF.denom1*e.denom2+IF.denom2*e.denom1
-        IF.rho <- IF.num/sqrt(e.denom1*e.denom2) - 0.5 * e.num * IF.denom / (e.denom1*e.denom2)^(3/2)
-    }
-    
-    ## ** export
-    out <- cor.test(x, y, conf.level = conf.level)
-    lower.level <- (1-conf.level)/2
-    upper.level <- 1-lower.level
-
-    out$estimate[] <- e.cor
-    out$iid <- cbind(original = IF.rho, atanh = IF.rho/(1-e.cor^2))
-    out$se <- sqrt(colSums(out$iid^2))/n.obs
-    if(transform){
-        out$statistic[] <- atanh(out$estimate)/out$se[2]
-        out$conf.int[] <- tanh(atanh(out$estimate) + qnorm(c(lower.level,upper.level)) * out$se[2])
-    }else{
-        out$statistic[] <- out$estimate/out$se[1]
-        out$conf.int[] <- out$estimate + qnorm(c(lower.level,upper.level)) * out$se[1]
-    }
-    out$p.value[] <- 2*(1-pnorm(abs(out$statistic)))
-    return(out)
-}
 
 ##----------------------------------------------------------------------
 ### FCT.R ends here

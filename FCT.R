@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:40) 
 ## Version: 
-## Last-Updated: feb  4 2025 (17:54) 
+## Last-Updated: feb  7 2025 (17:58) 
 ##           By: Brice Ozenne
-##     Update #: 114
+##     Update #: 121
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -94,7 +94,10 @@ simData <- function(seed, mu.PET, mu.fMRI, n.obs = 26,
 ##' @title Analyse regional fMRI/PET data
 ##' @description Evaluate the correlation between the two modalities using different methods.
 ##'
-##' @param data [data.frame] dataset containing a column id, region, PET, and fMRI
+##' @param formula [formula] 
+##' @param data [data.frame] Dataset containing a column id, region, PET, and fMRI
+##' @param df.lmm [logical] Should a Satterthwaite approximation be used to evaluate the degrees of freedom?
+##' Can be quite conservative in small samples for marginal/latent correlation.
 ##'
 ##' @details Available methods:
 ##' \itemize{
@@ -116,7 +119,7 @@ simData <- function(seed, mu.PET, mu.fMRI, n.obs = 26,
 ##' runCor(PET + fMRI ~ region|id, data = df)
 
 ## * runCor (code)
-runCor <- function(formula, data){
+runCor <- function(formula, data, df.lmm = FALSE){
 
     require(LMMstar)
     require(data.table)
@@ -203,8 +206,8 @@ runCor <- function(formula, data){
     f.lmm <- reformulate(termlabels = region, response = paste(outcome,collapse="+"))
     f.rep <- as.formula(paste0("~",region,"|",cluster))
     
-    e.lmm0 <- do.call(partialCor, args = list(f.lmm0, data = data2, repetition = f.rep, structure = "CS"))
-    e.lmm <- do.call(partialCor, args = list(f.lmm, data = data2, repetition = f.rep, structure = "CS"))
+    e.lmm0 <- do.call(partialCor, args = list(f.lmm0, data = data2, repetition = f.rep, structure = "CS", df = df.lmm))
+    e.lmm <- do.call(partialCor, args = list(f.lmm, data = data2, repetition = f.rep, structure = "CS", df = df.lmm))
     ## eRho.lmm <- coef(attr(e.lmm,"lmm"), effect = "correlation")
     ## (eRho.lmm["rho(1,2,dt=0)"]-eRho.lmm["rho(1,2,dt=1)"])/sqrt(prod(1-eRho.lmm[c("rho1","rho2")]))
 

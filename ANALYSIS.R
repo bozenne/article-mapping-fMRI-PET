@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (14:06) 
 ## Version: 
-## Last-Updated: feb  5 2025 (17:48) 
+## Last-Updated: feb  7 2025 (18:06) 
 ##           By: Brice Ozenne
-##     Update #: 42
+##     Update #: 45
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -50,20 +50,18 @@ df.joint$region.full <- region.name[df.joint$region]
 
 ## * Correlation analysis
 ## ** All at once
-strategyAll.cor <- runCor(asl + pet ~ region|cimbi, data = df.joint)
+strategyAll.cor <- runCor(asl + pet ~ region|cimbi, data = df.joint)[type!="latent"]
 strategyAll.cor
 ##            method        type   estimate       lower     upper      p.value
-##            <char>      <char>      <num>       <num>     <num>        <num>
-##  1: averageSignal     unclear 0.67160959  0.29826037 0.8667168 2.271529e-03
-##  2:    averageCor    marginal 0.14038232 -0.14331502 0.4027605 3.321895e-01
-##  3:     averageId conditional 0.49725395  0.42017948 0.5672053 0.000000e+00
-##  4: averageIdNorm conditional 0.03189227 -0.07990364 0.1428958 5.765669e-01
-##  5:          lmm0    marginal 0.42675938  0.28279207 0.5519221 3.025870e-04
-##  6:          lmm0 conditional 0.51211078  0.42623045 0.5888425 1.052047e-12
-##  7:          lmm0      latent 0.09838959 -0.57941824 0.6957443 7.301897e-01
-##  8:           lmm    marginal 0.13819072 -0.15605055 0.4099052 2.974110e-01
-##  9:           lmm conditional 0.07672043 -0.03635723 0.1878584 1.731352e-01
-## 10:           lmm      latent 0.18933946 -0.34464758 0.6307502 4.183106e-01
+##           <char>      <char>      <num>       <num>     <num>        <num>
+## 1: averageSignal     unclear 0.67160959  0.29826037 0.8667168 2.271529e-03
+## 2:    averageCor    marginal 0.14038232 -0.14331502 0.4027605 3.321895e-01
+## 3:     averageId conditional 0.49725395  0.42017948 0.5672053 0.000000e+00
+## 4: averageIdNorm conditional 0.03189227 -0.07990364 0.1428958 5.765669e-01
+## 5:          lmm0    marginal 0.42675938  0.30797055 0.5324466 8.415757e-11
+## 6:          lmm0 conditional 0.51211078  0.42906508 0.5865716 0.000000e+00
+## 7:           lmm    marginal 0.13819072 -0.10048466 0.3618267 2.558514e-01
+## 8:           lmm conditional 0.07672043 -0.03011947 0.1818271 1.591055e-01
 
 ## ** Strategy 1
 df.2cohorts <- aggregate(cbind(pet,asl)~region, data = df.joint,
@@ -118,9 +116,19 @@ range(strategy2.cor[,"estimate"])
 min(strategy2.cor[,"p.value"])
 ## 0.1082047
 
+## number of regions
+NROW(strategy2.cor0)
+## [1] 18
+
 ## ** Strategy 3
-strategy3.cor <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "CS")
+strategy3.cor <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "CS", df = FALSE)
 strategy3.cor
+##             estimate     se    df   lower upper p.value
+## marginal      0.1382 0.1201 Inf -0.1005 0.362   0.256
+## conditional   0.0767 0.0543 Inf -0.0301 0.182   0.159
+## latent        0.1893 0.2108 Inf -0.2325 0.551   0.381
+
+## partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "CS", df = TRUE)
 ##             estimate     se    df   lower upper p.value
 ## marginal      0.1382 0.1201  6.27 -0.1561 0.410   0.297
 ## conditional   0.0767 0.0543 21.91 -0.0364 0.188   0.173

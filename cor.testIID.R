@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb  4 2025 (13:04) 
 ## Version: 
-## Last-Updated: feb  4 2025 (14:35) 
+## Last-Updated: feb  7 2025 (10:57) 
 ##           By: Brice Ozenne
-##     Update #: 34
+##     Update #: 35
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -73,6 +73,7 @@ cor.testIID <- function(x, y, conf.level = 0.95, se = "model", transform = TRUE,
         y.norm <- as.double(scale(y))
 
         e.cor <- sum(x.norm*y.norm)/(n.obs-1)
+        ## equation 3 in Robust Estimation and Outlier Detection with Correlation Coefficients (Devlin et al. 1975, https://doi.org/10.2307/2335508)
         IF.rho <- n.obs/(n.obs-1) * ((x.norm*y.norm) - e.cor*(x.norm^2+y.norm^2)/2)
 
     }else{

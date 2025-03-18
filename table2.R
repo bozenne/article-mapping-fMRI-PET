@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 18 2025 (11:03) 
 ## Version: 
-## Last-Updated: mar 18 2025 (16:39) 
+## Last-Updated: mar 18 2025 (18:32) 
 ##           By: Brice Ozenne
-##     Update #: 13
+##     Update #: 17
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -29,74 +29,73 @@ format.pval2 <- function(pv, ...){
 ## * load data
 dtS.sim <-  readRDS(file = "results/simulation-summary.rds")
 
-dtL.table2 <- dtS.sim[scenario %in% c("A","B","C") & method %in% c("averageSignal","averageCor","lmm") & type %in% c("unclear","marginal")]
+dtL.table2 <- dtS.sim[method %in% c("averageSignal","averageCor","lmm") & type %in% c("unclear","marginal")]
 dtL.table2[, strategy := factor(method, levels = c("averageSignal","averageCor","lmm"), labels = 1:3)]
+## dtL.table2[, scenario := paste0(scenario, " (truth=",formatC(truth, format = "f", digits = 2),")")]
+## dtL.table2[, scenario := factor(scenario, unique(scenario))]
 
 ## * prepare table
 
 ## ** process simulation results
-dtW.table2 <- dcast(dtL.table2, scenario+strategy~n, value.var = c("bias","std","coverage","rejection.rate"))
-## options(width = 140)
-dt.table2 <- cbind(dtW.table2[,.(scenario,strategy)],
-                   Bias = paste0(format.pval2(dtW.table2$bias_26, digits = 1, eps = 1e-3), "/",format.pval2(dtW.table2$bias_1000, digits = 1, eps = 1e-3)),
+dtW.table2 <- dcast(dtL.table2,
+                    formula = scenario+truth+strategy~n,
+                    value.var = c("estimate","std","coverage","rejection.rate"))
+
+dt.table2 <- cbind(dtW.table2[,.(scenario, truth = round(truth,3), variance = ifelse(scenario %in% c("A","B","C"),"modality", "region & modality"), strategy)],
+                   Estimate = paste0(format.pval2(dtW.table2$estimate_26, digits = 1, eps = 1e-3), "/",format.pval2(dtW.table2$estimate_1000, digits = 3, eps = 1e-3)),
                    Std = paste0(formatC(dtW.table2$std_26, digits = 3, format = "f"), "/",formatC(dtW.table2$std_1000, digits = 3, format = "f")),
                    Coverage = paste0(formatC(dtW.table2$coverage_26, digits = 3, format = "f"), "/",formatC(dtW.table2$coverage_1000, digits = 3, format = "f")),
                    "Type 1 error" = paste0(formatC(dtW.table2$rejection.rate_26, digits = 3, format = "f"), "/",formatC(dtW.table2$rejection.rate_1000, digits = 3, format = "f")),
                    Power = paste0(formatC(dtW.table2$rejection.rate_26, digits = 3, format = "f"), "/",formatC(dtW.table2$rejection.rate_1000, digits = 3, format = "f"))
-)
-dt.table2[scenario != "B", "Type 1 error" := ""]
-dt.table2[scenario == "B", "Power" := ""]
-names(dt.table2)[3:7] <- paste(names(dt.table2)[3:7], "(n=26/n=1000)")
+                   )
+setkeyv(dt.table2, c("scenario","strategy"))
+dt.table2[truth==0, "Power" := ""]
+dt.table2[truth!=0, "Type 1 error" := ""]
+## names(dt.table2)[3:7] <- paste(names(dt.table2)[3:7], "(n=26/n=1000)")
+## options(width = 150)
+dt.table2
 ## WARNING: no difference between 0<x<0.001 and -0.001<x<0 (both are coded <0.001)
 
-##    scenario strategy Bias (n=26/n=1000) Std (n=26/n=1000) Coverage (n=26/n=1000) Type 1 error (n=26/n=1000) Power (n=26/n=1000)
-##      <char>   <fctr>             <char>            <char>                 <char>                     <char>              <char>
-## 1:        A        1      -0.008/-0.009       0.187/0.187            0.952/0.953                                    0.597/0.593
-## 2:        A        2      -0.005/<0.001       0.116/0.018            0.939/0.949                                    0.522/1.000
-## 3:        A        3       0.002/<0.001       0.115/0.018            0.940/0.951                                    0.559/1.000
-## 4:        B        1        0.664/0.674       0.033/0.005            0.000/0.000                1.000/1.000                    
-## 5:        B        2      -0.001/<0.001       0.116/0.018            0.943/0.952                0.057/0.048                    
-## 6:        B        3      -0.001/<0.001       0.115/0.018            0.945/0.952                0.055/0.048                    
-## 7:        C        1        0.169/0.174       0.028/0.005            1.000/1.000                                    1.000/1.000
-## 8:        C        2      -0.005/<0.001       0.116/0.018            0.939/0.949                                    0.522/1.000
-## 9:        C        3       0.002/<0.001       0.115/0.018            0.940/0.951                                    0.559/1.000
+##     scenario truth          variance strategy      Estimate         Std    Coverage Type 1 error       Power
+##       <char> <num>            <char>   <fctr>        <char>      <char>      <char>       <char>      <char>
+##  1:        A 0.500          modality        1   0.492/0.491 0.187/0.187 0.952/0.953              0.597/0.593
+##  2:        A 0.250          modality        2   0.245/0.250 0.116/0.018 0.939/0.949              0.522/1.000
+##  3:        A 0.250          modality        3   0.252/0.250 0.115/0.018 0.940/0.951              0.559/1.000
+##  4:        B 0.000          modality        1   0.664/0.674 0.033/0.005 0.000/0.000  1.000/1.000            
+##  5:        B 0.000          modality        2 -0.001/<0.001 0.116/0.018 0.943/0.952  0.057/0.048            
+##  6:        B 0.000          modality        3 -0.001/<0.001 0.115/0.018 0.945/0.952  0.055/0.048            
+##  7:        C 0.500          modality        1   0.669/0.674 0.028/0.005 1.000/1.000              1.000/1.000
+##  8:        C 0.250          modality        2   0.245/0.250 0.116/0.018 0.939/0.949              0.522/1.000
+##  9:        C 0.250          modality        3   0.252/0.250 0.115/0.018 0.940/0.951              0.559/1.000
+## 10:        D 0.000 region & modality        1  0.005/<0.001 0.243/0.245 0.948/0.947  0.051/0.052            
+## 11:        D 0.000 region & modality        2 -0.001/<0.001 0.127/0.020 0.942/0.950  0.058/0.050            
+## 12:        D 0.000 region & modality        3 -0.001/<0.001 0.115/0.019 0.948/0.953  0.052/0.048            
+## 13:        E 0.057 region & modality        1   0.664/0.674 0.037/0.006 0.000/0.000              1.000/1.000
+## 14:        E 0.135 region & modality        2   0.132/0.135 0.124/0.020 0.943/0.950              0.190/1.000
+## 15:        E 0.135 region & modality        3   0.120/0.123 0.113/0.018 0.945/0.902              0.183/1.000
 
-## NOTE 1: estimand 1 corresponds to strategy 1
-##         estimand 2 (marginal) corresponds to strategy 2 and 3 
-##         estimand 3 (conditional) is not described in the article
-##
-## NOTE 2: scenario D is an extra simulation not described in the article with non-homogeneous variance across regions.
+## NOTE 2: scenario D-E are extra simulations not described in the article with non-homogeneous variance across regions.
 ##         the LMM ignores this issue and is fitted as if all the regions have the same variance within modality.
 ##         Using partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "HCS", df = FALSE) does not make this restriction
 ##         but is not investigated in the simulation study (partly because it is much slower, partly because it is beyond the scope of the paper).
 
+keep.col <- c("scenario","truth","strategy","Estimate","Std","Coverage","Type 1 error","Power")
+table2 <- read_docx()
+table2 <- body_add_flextable(table2,set_table_properties(autofit(flextable(as.data.frame(dt.table2[scenario %in% c("A","B","C"),.SD,.SDcols = keep.col]))), width = 0.9, layout = "autofit"))
 
 ## ** format table for article
 
-dt.table2 <- table.sim[scenario %in% c("A","B","C") & trimws(estimand) %in% c("1","2","2 (LMM)")]
-dt.table2$estimand <- droplevels(dt.table2$estimand) ## drop estimand 3 levels
-dt.table2$estimand <- factor(dt.table2$estimand, labels = trimws(levels(dt.table2$estimand))) ## remove white space
-dt.table2$estimand <- factor(dt.table2$estimand, levels = c("1","2","2 (LMM)"), labels = 1:3) ## rename
-names(dt.table2)[names(dt.table2)=="estimand"] <- "strategy"
-
-table2 <- read_docx()
-table2 <- body_add_flextable(table2,set_table_properties(autofit(flextable(as.data.frame(dt.table2))), width = 0.9, layout = "autofit"))
-
 ## * Result as text
-truth.marginal <- dt.sim[type == "marginal", .(truth = unique(truth)), by = "scenario"]
-
-
-merge(dtSW.sim, truth.marginal, by = "scenario")[scenario %in% c("A","C") & trimws(estimand) %in% c("1","2","2 (LMM)"),
-                                                 .("bias (%)" = 100*bias_26/truth),
-                                                 by = c("estimand","scenario")]
-##    estimand scenario   bias (%)
-##      <fctr>   <char>      <num>
-## 1:  1              A   2.132179
-## 2:  2              A   1.609760
-## 3:  2 (LMM)        A  -1.274466
-## 4:  1              C -67.181214
-## 5:  2              C   1.609760
-## 6:  2 (LMM)        C  -1.274466
+rBias.table2 <- dtL.table2[scenario %in% c("A","C","E"),.("bias (%)" = 100*(estimate-truth)/truth), by = c("strategy","scenario","n")]
+dcast(rBias.table2, formula = strategy+n~scenario)
+##    strategy     n           A           C           E
+##      <fctr> <num>       <num>       <num>       <num>
+## 1:        1    26 -1.60518506 33.79706186 1055.770239
+## 2:        1  1000 -1.83492753 34.79760080 1072.969076
+## 3:        2    26 -2.09814713 -2.09814713   -2.556856
+## 4:        2  1000 -0.01419166 -0.01419166    0.082628
+## 5:        3    26  0.90051817  0.90051817  -11.450650
+## 6:        3  1000  0.06139116  0.06139116   -9.124178
 
 
 ## * export results 

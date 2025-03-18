@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (14:06) 
 ## Version: 
-## Last-Updated: feb  7 2025 (18:06) 
+## Last-Updated: mar 18 2025 (13:28) 
 ##           By: Brice Ozenne
-##     Update #: 45
+##     Update #: 69
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,11 +17,7 @@
 
 ## * load code
 library(data.table)
-library(ggplot2)
-library(ggrepel)
 library(LMMstar)
-library(officer)
-library(flextable)
 source("cor.testIID.R")
 source("FCT.R")
 
@@ -121,7 +117,13 @@ NROW(strategy2.cor0)
 ## [1] 18
 
 ## ** Strategy 3
-strategy3.cor <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "CS", df = FALSE)
+strategy3.corlmm <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "CS", df = FALSE)
+
+## split output
+strategy3.cor <- strategy3.corlmm
+attr(strategy3.cor,"lmm") <- NULL
+strategy3.lmm <- attr(strategy3.corlmm,"lmm")
+
 strategy3.cor
 ##             estimate     se    df   lower upper p.value
 ## marginal      0.1382 0.1201 Inf -0.1005 0.362   0.256
@@ -134,7 +136,7 @@ strategy3.cor
 ## conditional   0.0767 0.0543 21.91 -0.0364 0.188   0.173
 ## latent        0.1893 0.2108  5.36 -0.3446 0.631   0.418
 
-model.tables(attr(strategy3.cor,"lmm"), effects = c("variance","correlation"))
+model.tables(strategy3.lmm, effects = c("variance","correlation"))
 ##                 estimate          se        df       lower       upper      p.value
 ## sigma         9.27035474 0.716169306  4.895445  7.59091508 11.32135929           NA
 ## k.pet         0.02746754 0.003372901 11.107797  0.02096915  0.03597978 7.220446e-12
@@ -142,6 +144,8 @@ model.tables(attr(strategy3.cor,"lmm"), effects = c("variance","correlation"))
 ## rho1          0.48151823 0.080286274  5.702418  0.25983972  0.65498593 2.776387e-03
 ## rho(1,2,dt=1) 0.10496416 0.119125262  5.726731 -0.19047218  0.38296658 4.169382e-01
 ## rho2          0.63824446 0.072511481  8.241502  0.44182255  0.77627125 2.366809e-04
+
+## * Extra analyses
 
 ## ** Strategy 3 (simplified)
 dt.joint <- as.data.table(df.joint)
@@ -163,79 +167,66 @@ t.test(dtS.joint$cor)
 
 ##  4: averageIdNorm conditional 0.03189227 -0.07990364 0.1428958 5.765669e-01
 
-## * Figures
-## ** strategy 1
-nsig <- 2
-sub.text.corr <- paste0("Pearson's rho: ", signif(strategy1.cor$estimate,nsig),
-                        ', 95% CI: ', paste(signif(strategy1.cor$conf.int,nsig), collapse = '; '),
-                        ', p = ', signif(strategy1.cor$p.value,nsig))
+## ** Strategy 3 without assuming same variance
+## WARNING: time consuming ~2 min
+system.time(
+    strategy3.corlmmH <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "HCS", df = FALSE)
+)
 
-gg.strategy1 <- ggplot(cbind(df.2cohorts, region.full = region.name[df.2cohorts$region]), aes(x = pet, y = asl)) 
-gg.strategy1 <- gg.strategy1 + geom_smooth(method = 'lm', alpha = .8, color = 'black') 
-gg.strategy1 <- gg.strategy1 + geom_point(aes(color = region)) 
-gg.strategy1 <- gg.strategy1 + theme_classic() 
-gg.strategy1 <- gg.strategy1 + theme(axis.text = element_text(size=20),
-                                     axis.title = element_text(size=24,face="bold"), 
-                                     legend.position = 'none',
-                                     plot.title = element_text(hjust = 0.5, face = "bold", size = 24),
-                                     plot.subtitle = element_text(hjust = 0.5, size = 20))
-gg.strategy1 <- gg.strategy1 + labs(x = '[11C]Cimbi-36 BPND', y = 'Baseline CBF (ml/100g/min)', title = '5-HT2AR vs. CBF', subtitle = sub.text.corr)
-gg.strategy1 <- gg.strategy1 + scale_x_continuous(breaks = seq(0.2,1.6,0.2))
-gg.strategy1 <- gg.strategy1 + scale_y_continuous(limits = c(35,70), breaks = seq(35,70,5))
-gg.strategy1 <- gg.strategy1 + geom_label_repel(aes(label = region.full, 
-                                                    fill = region), size = 5)
-gg.strategy1
-    
-if(FALSE){
-    ggsave(gg.strategy1, filename = file.path("figures","gg-analysis-strategy1.pdf"), units = "in", width = 12.5, height = 7.5)
-    ggsave(gg.strategy1, filename = file.path("figures","gg-analysis-strategy1.png"), units = "in", width = 12.5, height = 7.5, dpi=300)
-}
+## split output
+strategy3.corH <- strategy3.corlmmH
+attr(strategy3.corH,"lmm") <- NULL
+strategy3.lmmH <- attr(strategy3.corlmmH,"lmm")
 
-## ** strategy 2
-dfGG.strategy2 <- cbind(region = rownames(strategy2.cor),
-                        region.full = c("average" = "Average", region.name)[rownames(strategy2.cor)],
-                        strategy2.cor)
-dfGG.strategy2$region.full <- factor(dfGG.strategy2$region.full, levels = unique(dfGG.strategy2$region.full))
-dfGG.strategy2$style <- dfGG.strategy2$region=="average"
+strategy3.corH
+##             estimate     se  df  lower upper p.value
+## marginal      0.1353 0.1314 Inf -0.125 0.379   0.309
+## conditional   0.0574 0.0557 Inf -0.052 0.165   0.304
+## latent        0.1847 0.2090 Inf -0.233 0.545   0.388
+
+## * Gather summary statistics for parametrizing simulations
+gridASL.region <- data.frame(CCvariableCC = "asl", region = sort(names(region.name)))
+gridPET.region <- data.frame(CCvariableCC = "pet", region = sort(names(region.name)))
+     
+param.lmm <- list(mu.asl = setNames(predict(strategy3.lmm, newdata = gridASL.region), sort(names(region.name))),
+                     mu.pet = setNames(predict(strategy3.lmm, newdata = gridPET.region), sort(names(region.name))),
+                     sigma.asl = coef(strategy3.lmm, effects = "variance", transform.k = "sd")["sigma.asl"],
+                     sigma.pet = coef(strategy3.lmm, effects = "variance", transform.k = "sd")["sigma.pet"],
+                     rho.asl = coef(strategy3.lmm, effects = "correlation")["rho1"],
+                     rho.pet = coef(strategy3.lmm, effects = "correlation")["rho2"],
+                     rho.petasl = coef(strategy3.lmm, effects = "correlation")["rho(1,2,dt=0)"],
+                     rhoLag.petasl = coef(strategy3.lmm, effects = "correlation")["rho(1,2,dt=1)"]
+                     )
+
+allSigma <- coef(strategy3.lmmH, effects = "variance", transform.k = "sd")
+param.lmmH <- list(mu.asl = setNames(predict(strategy3.lmmH, newdata = gridASL.region), sort(names(region.name))),
+                     mu.pet = setNames(predict(strategy3.lmmH, newdata = gridPET.region), sort(names(region.name))),
+                     sigma.asl = setNames(allSigma[grepl("asl",names(allSigma))], gsub("sigma.asl:","",grep("asl",names(allSigma),value = TRUE),fixed = TRUE)),
+                     sigma.pet = setNames(allSigma[grepl("pet",names(allSigma))], gsub("sigma.pet:","",grep("pet",names(allSigma),value = TRUE),fixed = TRUE)),
+                     rho.asl = coef(strategy3.lmmH, effects = "correlation")["rho1"],
+                     rho.pet = coef(strategy3.lmmH, effects = "correlation")["rho2"],
+                     rho.petasl = coef(strategy3.lmmH, effects = "correlation")["rho(1,2,dt=0)"],
+                     rhoLag.petasl = coef(strategy3.lmmH, effects = "correlation")["rho(1,2,dt=1)"]
+                     )
 
 
-gg.strategy2 <- ggplot(dfGG.strategy2, aes(x = region.full, y =  estimate, ymin = lower, ymax = upper) )
-gg.strategy2 <- gg.strategy2 + geom_point(aes(shape = style, size = style)) + geom_linerange(aes(linewidth = style))
-gg.strategy2 <- gg.strategy2 + geom_hline(yintercept = 0, linetype = "dashed")
-gg.strategy2 <- gg.strategy2 + coord_cartesian(ylim = c(-1,1))
-gg.strategy2 <- gg.strategy2 + labs(x="",y="Pearson's correlation coefficient") + guides(linewidth = "none", shape = "none", size = "none")
-gg.strategy2 <- gg.strategy2 + scale_size_manual(breaks = c(FALSE,TRUE), values = c(2,3))
-gg.strategy2 <- gg.strategy2 + scale_shape_manual(breaks = c(FALSE,TRUE), values = c(19,15))
-gg.strategy2 <- gg.strategy2 + scale_linewidth_manual(breaks = c(FALSE,TRUE), values = c(1,1.5))
-gg.strategy2 <- gg.strategy2 + theme(text = element_text(size=15), ,
-                                     axis.text.x=element_text(angle=90, size = 8),                                     
-                                     axis.line = element_line(linewidth = 1.25),
-                                     axis.ticks = element_line(linewidth = 2),
-                                     axis.ticks.length=unit(.25, "cm"))
-gg.strategy2 <- gg.strategy2 + scale_x_discrete(breaks = levels(dfGG.strategy2$region.full),
-                                                labels = c(levels(dfGG.strategy2$region.full)[-length(dfGG.strategy2$region.full)],
-                                                           expression(bold("average"))))
-gg.strategy2
+## * Export
+saveRDS(region.name, file = "results/regionName.rds")
+saveRDS(df.2cohorts, file = "results/df2cohorts.rds")
 
-if(FALSE){
-    ggsave(gg.strategy2, filename = file.path("figures","gg-analysis-strategy2.pdf"), width = 8, height = 5)
-    ggsave(gg.strategy2, filename = file.path("figures","gg-analysis-strategy2.png"), width = 8, height = 5)
-}
+saveRDS(strategy1.cor, file = "results/strategy1.rds")
+saveRDS(strategy2.cor, file = "results/strategy2.rds")
+saveRDS(strategy3.cor, file = "results/strategy3.rds")
+saveRDS(strategy3.corH, file = "results/strategy3H.rds")
 
-## * Tables
-## ** strategy 2
-n.digit <- 3
+saveRDS(param.lmm, file = "results/strategy3-lmm-param.rds")
+saveRDS(param.lmmH, file = "results/strategy3-lmmH-param.rds")
 
-df.table1 <- cbind(" "=c("average"="Average",region.name)[rownames(strategy2.cor)],
-                   "Estimated correlation" = formatC(round(strategy2.cor$estimate,n.digit), format = "f", digits = n.digit),
-                   "Confidence interval" = paste0("[",formatC(round(strategy2.cor$lower,n.digit), format = "f", digits = n.digit),
-                                                  "; ",formatC(round(strategy2.cor$upper,n.digit), format = "f", digits = n.digit),"]"),
-                   "P-value" = formatC(round(strategy2.cor$p.value,n.digit), format = "f", digits = n.digit))
-## formatC keeps trailing 0
 
-table1 <- read_docx()
-table1 <- body_add_flextable(table1,set_table_properties(autofit(flextable(as.data.frame(df.table1))), width = 0.9, layout = "autofit"))
-print(table1, target = "tables/table1.docx")
+saveRDS(strategy3.lmm, file = "source/strategy3-lmm.rds") ## not anonymized and heavy
+saveRDS(strategy3.lmmH, file = "source/strategy3-lmmH.rds") ## not anonymized and heavy
 
+
+ 
 ##----------------------------------------------------------------------
 ### analysis.R ends here

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:40) 
 ## Version: 
-## Last-Updated: feb  7 2025 (17:58) 
+## Last-Updated: mar 18 2025 (16:26) 
 ##           By: Brice Ozenne
-##     Update #: 121
+##     Update #: 123
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -98,6 +98,8 @@ simData <- function(seed, mu.PET, mu.fMRI, n.obs = 26,
 ##' @param data [data.frame] Dataset containing a column id, region, PET, and fMRI
 ##' @param df.lmm [logical] Should a Satterthwaite approximation be used to evaluate the degrees of freedom?
 ##' Can be quite conservative in small samples for marginal/latent correlation.
+##' @param lmmH [logical] Should a linear mixed model with heteroscedastic residual variance be fitted?
+##' Can be time consuming.
 ##'
 ##' @details Available methods:
 ##' \itemize{
@@ -119,7 +121,7 @@ simData <- function(seed, mu.PET, mu.fMRI, n.obs = 26,
 ##' runCor(PET + fMRI ~ region|id, data = df)
 
 ## * runCor (code)
-runCor <- function(formula, data, df.lmm = FALSE){
+runCor <- function(formula, data, df.lmm = FALSE, lmmH = FALSE){
 
     require(LMMstar)
     require(data.table)
@@ -208,6 +210,9 @@ runCor <- function(formula, data, df.lmm = FALSE){
     
     e.lmm0 <- do.call(partialCor, args = list(f.lmm0, data = data2, repetition = f.rep, structure = "CS", df = df.lmm))
     e.lmm <- do.call(partialCor, args = list(f.lmm, data = data2, repetition = f.rep, structure = "CS", df = df.lmm))
+    if(lmmH){
+        e.lmmH <- do.call(partialCor, args = list(f.lmm, data = data2, repetition = f.rep, structure = "HCS", df = df.lmm))
+    }
     ## eRho.lmm <- coef(attr(e.lmm,"lmm"), effect = "correlation")
     ## (eRho.lmm["rho(1,2,dt=0)"]-eRho.lmm["rho(1,2,dt=1)"])/sqrt(prod(1-eRho.lmm[c("rho1","rho2")]))
 
@@ -227,6 +232,12 @@ runCor <- function(formula, data, df.lmm = FALSE){
                  data.table(method = "lmm", type = "conditional", e.lmm["conditional",c("estimate","lower","upper","p.value")]),
                  data.table(method = "lmm", type = "latent", e.lmm["latent",c("estimate","lower","upper","p.value")])
                  )
+    if(lmmH){
+        out <- rbind(out,
+                     data.table(method = "lmmH", type = "marginal", e.lmmH["marginal",c("estimate","lower","upper","p.value")]),
+                     data.table(method = "lmmH", type = "conditional", e.lmmH["conditional",c("estimate","lower","upper","p.value")]),
+                     data.table(method = "lmmH", type = "latent", e.lmmH["latent",c("estimate","lower","upper","p.value")]))
+    }
     return(out)
 }
 
@@ -349,7 +360,63 @@ plotCor <- function(data, type.norm, n.id = 4, widths = c(1.5,0.5), round.dotplo
     return(ggAll)
 }
 
+## * Collect simulation results
+loadRes <- function(path, tempo.file = FALSE, type = NULL,
+                    export.attribute = NULL, trace = 2, space = "     "){
+    all.files <- list.files(path)
+    file.tempo <- grep("(tempo)",all.files,value = TRUE)
+    file.final <- setdiff(all.files, file.tempo)
 
+    if(tempo.file){
+        file.read <- file.tempo
+    }else{
+        file.read <- file.final
+    }
+    if(!is.null(type)){
+        file.read <- grep(pattern=type,x=file.read,value=TRUE)
+    }
+
+    n.file <- length(file.read)
+    if(n.file==0){
+        if(trace>1){
+            cat(space,"No file found in ",path,". \n\n",sep="")
+        }
+        return(NULL)
+    }
+    myApply <- switch(as.character(as.logical(trace)),
+                      "TRUE" = pbapply::pblapply,
+                      "FALSE" = lapply)
+
+    ls.out <- do.call(myApply, args = list(X = 1:n.file, FUN = function(iFile){
+        if(grepl("\\.rds$",file.read[iFile])){
+            iRead <- try(readRDS(file = file.path(path,file.read[iFile])))
+        }else if(grepl("\\.rda$", file.read[iFile])){
+            iRead <- try(load(file = file.path(path,file.read[iFile])))
+            if(!inherits(iRead,"try-error")){
+                iRead <- eval(parse(text = iRead))
+            }
+        }else{
+            return(NULL)
+        }
+        if(inherits(iRead,"try-error")){
+            return(NULL)
+        }else{
+            iOut <- cbind(data.table::as.data.table(iRead),
+                          file = file.read[iFile])
+            return(iOut)
+        }
+    }))
+
+    out <- do.call(rbind, ls.out)
+
+    Urow <- unique(sapply(ls.out, NROW))
+    if(length(Urow)==1){
+        cat(space,length(ls.out)," files with ",Urow," lines \n\n",sep="")
+    }else{
+        cat(space,length(ls.out)," files, with from ",min(Urow)," to ",max(Urow)," lines \n\n",sep="")
+    }
+    return(out)
+}
 
 ##----------------------------------------------------------------------
 ### FCT.R ends here

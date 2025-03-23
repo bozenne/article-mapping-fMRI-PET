@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:43) 
 ## Version: 
-## Last-Updated: mar 21 2025 (10:04) 
+## Last-Updated: mar 23 2025 (11:13) 
 ##           By: Brice Ozenne
-##     Update #: 27
+##     Update #: 49
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -15,135 +15,216 @@
 ## 
 ### Code:
 
+## * libraries
 library(LMMstar)
 library(ggplot2)
 library(ggpubr)
 source("FCT.R")
 source("cor.testIID.R")
 
-## * Setting
-n.region <- 18
+## * settings
+
+## ** parametrisation
+## param.lmm <- readRDS("results/strategy3-lmm-param.rds")
+mu.asl <- c("amygdala" = 41.75461171, "antcin" = 63.97868936, "cau" = 51.03709735, "DLPFC" = 61.81180998, "entorhinc" = 37.93286726, "hippocampus" = 48.20552864, "ins" = 61.01470806, "medinffg" = 64.47818102, "occ" = 49.06232099, "orbfrc" = 54.13080092, "parc" = 57.03041177, "postcin" = 56.59856003, "put" = 53.58549712, "senmotc" = 57.3037015, "supfg" = 56.45369853, "suptempg" = 59.07503085, "th" = 47.54133327, "VLPFC" = 64.91376706) ## param.lmm$mu.asl
+mu.pet <- c("amygdala" = 0.83208117, "antcin" = 1.56758472, "cau" = 0.24240839, "DLPFC" = 1.20843445, "entorhinc" = 0.54770079, "hippocampus" = 0.55927805, "ins" = 1.57503343, "medinffg" = 1.27606528, "occ" = 1.15537147, "orbfrc" = 1.44086414, "parc" = 1.1357671, "postcin" = 1.36909301, "put" = 0.35256114, "senmotc" = 0.84761643, "supfg" = 1.13908271, "suptempg" = 1.47829904, "th" = 0.42062905, "VLPFC" = 1.3450188) ## param.lmm$mu.pet
+sigma.asl <- 9.270355  ## param.lmm$sigma.asl
+sigma.pet <- 0.2546338  ## param.lmm$sigma.pet
+
+rho.asl <- 0.4815182 ## param.lmm$rho.asl
+rho.pet <- 0.6382445 ## param.lmm$rho.pet
+rho.petasl <- 0.1381907 ## param.lmm$rho.petasl
+rhoLag.petasl <- 0.1049642  ## param.lmm$rhoLag.petasl
+
+rho.marginal <- 0.25 ## substantially differs from rho.petasl
+rho.conditional <- 0.5 ## substantially differs from  (rho.petasl-rhoLag.petasl)/sqrt((1-rho.asl)*(1-rho.pet))
 
 
-## * Analysis
+## ** seed
+seed <- 12
 
-## ** Scenario A
-dtL.scenarioA <- simData(seed = 1, n.obs = 24,
-                         mu.PET = rep(4.8,n.region),
-                         mu.fMRI = 1+rep(5,n.region),
-                         rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.25, rho.conditional = 0.5,
-                         sigma.PET = 3, sigma.fMRI = 5)
+## ** display
+round.dotplot <- 2
+xspace.dotplot <- 0.3
+size.dotplot <- c(6,4)
 
-runCor(PET + fMRI ~ region|id, data = dtL.scenarioA)[type!="latent"]
-##           method        type   estimate      lower     upper   p.value
-##           <char>      <char>      <num>      <num>     <num>     <num>
-## 1: averageSignal     unclear 0.35523747 -0.1338279 0.7051574 0.1480007
-## 2:    averageCor    marginal 0.06724627 -0.1762087 0.3029487 0.5906723
-## 3:     averageId conditional 0.46098596  0.4026315 0.5156086 0.0000000
-## 4: averageIdNorm conditional 0.46194101  0.4039113 0.5162680 0.0000000
-## 5:          lmm0    marginal 0.06699296 -0.2090322 0.3331310 0.6377102
-## 6:          lmm0 conditional 0.45521698  0.3782534 0.5259304 0.0000000
-## 7:           lmm    marginal 0.06895623 -0.2065305 0.3343131 0.6270641
-## 8:           lmm conditional 0.45818886  0.3798878 0.5299707 0.0000000
-plotCor(dtL.scenarioA, type.norm = 2)
+round.factor <- 1+9*(round.dotplot %% 1)/10
+round.dotplot <- floor(round.dotplot)
 
-dtL1000.scenarioA <- simData(seed = 1, n.obs = 1000,
-                             mu.PET = rep(4.8,n.region),
-                             mu.fMRI = 1+rep(5,n.region),
-                             rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.25, rho.conditional = 0.5,
-                             sigma.PET = 3, sigma.fMRI = 5)
-runCor(PET + fMRI ~ region|id, data = dtL1000.scenarioA)[type!="latent"]
-##          method        type  estimate      lower     upper    p.value
-##           <char>      <char>     <num>      <num>     <num>      <num>
-## 1: averageSignal     unclear 0.5226332 0.07376088 0.7954195 0.02606444
-## 2:    averageCor    marginal 0.2341701 0.19123069 0.2762150 0.00000000
-## 3:     averageId conditional 0.4929088 0.48146203 0.5041875 0.00000000
-## 4: averageIdNorm conditional 0.4920914 0.48065444 0.5033609 0.00000000
-## 5:          lmm0    marginal 0.2344417 0.19136205 0.2766199 0.00000000
-## 6:          lmm0 conditional 0.5025698 0.49124787 0.5137220 0.00000000
-## 7:           lmm    marginal 0.2344234 0.19134019 0.2766051 0.00000000
-## 8:           lmm conditional 0.5025487 0.49122076 0.5137068 0.00000000
+region.name <- readRDS("results/regionName.rds")
+region.keep <- region.name[names(mu.pet)][c(3,6,12,18)]
+id.keep <- c(1:3,24)
 
-## ** Scenario B
-dtL.scenarioB <- simData(seed = 1, n.obs = 24,
-                         mu.PET = 1:n.region/2,
-                         mu.fMRI = 1+5+(1:n.region)/5,
-                         rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0, rho.conditional = 0)
+color.region <- setNames(rep(palette.colors()[1],length(region.name)), region.name)
+color.region[region.keep] <- palette.colors()[c(2,6,4,8)]
+shape.region <- setNames(rep(1,length(region.name)), region.name)
+shape.region[region.keep] <- c(8,13,16,17)
+shape.region[setdiff(names(shape.region),region.keep)] <- setdiff(1:18,shape.region[region.keep])
 
-runCor(PET + fMRI ~ region|id, data = dtL.scenarioB)[type!="latent"]
-##           method        type    estimate       lower      upper      p.value
-##           <char>      <char>       <num>       <num>      <num>        <num>
-## 1: averageSignal     unclear  0.87715246  0.69482415 0.95353462 1.761851e-06
-## 2:    averageCor    marginal -0.19241825 -0.41409138 0.05080116 1.200991e-01
-## 3:     averageId conditional  0.27814586  0.20194861 0.35099620 4.508172e-12
-## 4: averageIdNorm conditional -0.04499694 -0.11734742 0.02782867 2.258184e-01
-## 5:          lmm0    marginal  0.10685976 -0.01371068 0.22436726 8.224102e-02
-## 6:          lmm0 conditional  0.27395755  0.18572707 0.35780567 3.413854e-09
-## 7:           lmm    marginal -0.19472621 -0.43633655 0.07307638 1.528796e-01
-## 8:           lmm conditional -0.06950383 -0.16321342 0.02544865 1.512295e-01
-plotCor(dtL.scenarioB, type.norm = 2)
+## * Data
+## ** simulate
+dtL.scenarioA <- simData(seed = seed, n.obs = 24,
+                         mu.PET = rep(mean(mu.pet), length(mu.pet)),
+                         mu.fMRI = rep(mean(mu.asl), length(mu.asl)),
+                         rho.PET = rho.pet, rho.fMRI = rho.asl, rho.marginal = rho.marginal, rho.conditional = rho.conditional,
+                         sigma.PET = sigma.pet, sigma.fMRI = sigma.asl)
+dtL.scenarioB <- simData(seed = seed, n.obs = 24,
+                         mu.PET = mu.pet,
+                         mu.fMRI = mu.asl,
+                         rho.PET = rho.pet, rho.fMRI = rho.asl, rho.marginal = 0, rho.conditional = 0,
+                         sigma.PET = sigma.pet, sigma.fMRI = sigma.asl)
+dtL.scenarioC <- simData(seed = seed, n.obs = 24,
+                         mu.PET = mu.pet,
+                         mu.fMRI = mu.asl,
+                         rho.PET = rho.pet, rho.fMRI = rho.asl, rho.marginal = rho.marginal, rho.conditional = rho.conditional,
+                         sigma.PET = sigma.pet, sigma.fMRI = sigma.asl)
 
-dtL1000.scenarioB <- simData(seed = 1, n.obs = 1000,
-                             mu.PET = 1:n.region/2,
-                             mu.fMRI = 1+5+(1:n.region)/5,
-                             rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0, rho.conditional = 0)
-runCor(PET + fMRI ~ region|id, data = dtL1000.scenarioB)[type!="latent"]
-##           method        type     estimate       lower      upper      p.value
-##           <char>      <char>        <num>       <num>      <num>        <num>
-## 1: averageSignal     unclear  0.994426413  0.98473915 0.99797070 4.601269e-17
-## 2:    averageCor    marginal -0.015713127 -0.05958441 0.02821874 4.833414e-01
-## 3:     averageId conditional  0.317328451  0.30357429 0.33095039 0.000000e+00
-## 4: averageIdNorm conditional  0.004084752 -0.01092864 0.01909630 5.938663e-01
-## 5:          lmm0    marginal  0.189618749  0.17095615 0.20814533 0.000000e+00
-## 6:          lmm0 conditional  0.321129336  0.30758230 0.33454621 0.000000e+00
-## 7:           lmm    marginal -0.015554549 -0.05944429 0.02839522 4.879461e-01
-## 8:           lmm conditional  0.003255548 -0.01178367 0.01829329 6.713760e-01
 
-## ** Scenario C
-dtL.scenarioC <- simData(seed = 1, n.obs = 24,
-                         mu.PET = 1:n.region/2,
-                         mu.fMRI = 1+5+(1:n.region)/5,
-                         rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.25, rho.conditional = 0.5)
+## M.res <- rbind(A=runCor(PET + fMRI ~ region|id, data = dtL.scenarioA)[type %in% c("marginal","unclear")]$estimate,
+##                B=runCor(PET + fMRI ~ region|id, data = dtL.scenarioB)[type %in% c("marginal","unclear")]$estimate,
+##                C=runCor(PET + fMRI ~ region|id, data = dtL.scenarioC)[type %in% c("marginal","unclear")]$estimate)[,c(1,2,4)]
+## print(M.res)
+## A 0.5552999  0.279276644  0.27951793
+## B 0.7007177 -0.009044682 -0.01830424
+## C 0.7032253  0.279276644  0.27951793
 
-runCor(PET + fMRI ~ region|id, data = dtL.scenarioC)[type!="latent"]
-##           method        type   estimate       lower     upper      p.value
-##           <char>      <char>      <num>       <num>     <num>        <num>
-## 1: averageSignal     unclear 0.88649462  0.71593356 0.9572006 9.647869e-07
-## 2:    averageCor    marginal 0.07516425 -0.16298066 0.3050331 5.381438e-01
-## 3:     averageId conditional 0.35941359  0.28714480 0.4276139 0.000000e+00
-## 4: averageIdNorm conditional 0.47297607  0.41687698 0.5254856 0.000000e+00
-## 5:          lmm0    marginal 0.20151191  0.08427719 0.3132440 8.326941e-04
-## 6:          lmm0 conditional 0.35962481  0.27588645 0.4379453 2.442491e-15
-## 7:           lmm    marginal 0.07689656 -0.19908544 0.3415776 5.880967e-01
-## 8:           lmm conditional 0.46933238  0.39196976 0.5401039 0.000000e+00
-plotCor(dtL.scenarioC, type.norm = 2)
+## ** normalize
+dtL.scenarioA[, c("PET.norm","fMRI.norm") := .(scale(PET),scale(fMRI)), by = "region"]
+dtL.scenarioB[, c("PET.norm","fMRI.norm") := .(scale(PET),scale(fMRI)), by = "region"]
+dtL.scenarioC[, c("PET.norm","fMRI.norm") := .(scale(PET),scale(fMRI)), by = "region"]
 
-dtL1000.scenarioC <- simData(seed = 1, n.obs = 1000,
-                             mu.PET = 1:n.region/2,
-                             mu.fMRI = 1+5+(1:n.region)/5,
-                             rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.25, rho.conditional = 0.5)
-runCor(PET + fMRI ~ region|id, data = dtL1000.scenarioC)[type!="latent"]
-##           method        type  estimate     lower     upper      p.value
-##           <char>      <char>     <num>     <num>     <num>        <num>
-## 1: averageSignal     unclear 0.9947922 0.9857361 0.9981041 2.676362e-17
-## 2:    averageCor    marginal 0.2328200 0.1898082 0.2749400 0.000000e+00
-## 3:     averageId conditional 0.3906901 0.3775123 0.4037098 0.000000e+00
-## 4: averageIdNorm conditional 0.4931067 0.4818268 0.5042232 0.000000e+00
-## 5:          lmm0    marginal 0.2779337 0.2601777 0.2955018 0.000000e+00
-## 6:          lmm0 conditional 0.3996423 0.3869348 0.4121980 0.000000e+00
-## 7:           lmm    marginal 0.2330568 0.1899371 0.2752791 0.000000e+00
-## 8:           lmm conditional 0.5025507 0.4912227 0.5137087 0.000000e+00
+dtL.scenarioA[, region := region.name[region]]
+dtL.scenarioB[, region := region.name[region]]
+dtL.scenarioC[, region := region.name[region]]
 
-## * Figure simulation
-figure3 <- plotCor(list("Scenario A" = dtL.scenarioA,"Scenario B" = dtL.scenarioB, "Scenario C" = dtL.scenarioC),
-                  type.norm = 2, xspace.dotplot = 0.15, round.dotplot = 1.9, size.dotplot = c(3,2))
+## * Figure
 
-pdf("./figures/figure3.pdf", width = 12, height = 8)
-figure3
+## ** sub-figure 1
+dtL1.scenarioA <- rbind(dtL.scenarioA[id %in% id.keep,.(region,id,fMRI,PET)],
+                        dtL.scenarioA[,.(id = "Average", fMRI = mean(fMRI), PET = mean(PET)), by = "region"])
+dtL1.scenarioB <- rbind(dtL.scenarioB[id %in% c(1:3,24),.(region,id,fMRI,PET)],
+                        dtL.scenarioB[,.(id = "Average", fMRI = mean(fMRI), PET = mean(PET)), by = "region"])
+dtL1.scenarioC <- rbind(dtL.scenarioC[id %in% c(1:3,24),.(region,id,fMRI,PET)],
+                        dtL.scenarioC[,.(id = "Average", fMRI = mean(fMRI), PET = mean(PET)), by = "region"])
+dtL1.scenario <- rbind(cbind(scenario = "A", dtL1.scenarioA),
+                       cbind(scenario = "B", dtL1.scenarioB),
+                       cbind(scenario = "C", dtL1.scenarioC))
+dtL1.scenario$id2 <- factor(dtL1.scenario$id,
+                            levels = c(id.keep,"Average"),
+                            labels = c(paste0("Patient ",id.keep[1:2]),"...",paste0("Patient ",id.keep[4]),"average"))
+dtL1.scenario$scenario2 <- paste("Scenario", dtL1.scenario$scenario, sep = " ")
+
+figure3.1 <- ggplot(dtL1.scenario, aes(x = PET, y = fMRI))
+figure3.1 <- figure3.1 + geom_point(aes(shape=region,color=region,size=region)) + facet_grid(scenario2~id2)
+figure3.1 <- figure3.1 + scale_shape_manual(values=shape.region,breaks=names(shape.region))
+figure3.1 <- figure3.1 + scale_size_manual(values=2+region.name %in% region.keep, breaks=region.name)
+figure3.1 <- figure3.1 + scale_color_manual(values=color.region,breaks=names(shape.region))
+figure3.1 <- figure3.1 + labs(x = '[11C]Cimbi-36 BPND', y = 'Baseline CBF (ml/100g/min)',
+                              shape = "Region", color = "Region", size = "Region")
+figure3.1 <- figure3.1 + theme(text = element_text(size=12), 
+                               axis.line = element_line(linewidth = 1.25),
+                               axis.ticks = element_line(linewidth = 2),
+                               axis.ticks.length=unit(.25, "cm"),
+                               legend.key.size = unit(1,"line"))
+figure3.1
+
+## ** sub-figure 2
+dtL2.scenarioA <- rbind(dtL.scenarioA[id %in% c(1:3,24),.(region,id,fMRI.norm,PET.norm)],
+                        dtL.scenarioA[,.(id = "Average", fMRI.norm = mean(fMRI.norm), PET.norm = mean(PET.norm)), by = "region"])
+dtL2.scenarioB <- rbind(dtL.scenarioB[id %in% c(1:3,24),.(region,id,fMRI.norm,PET.norm)],
+                        dtL.scenarioB[,.(id = "Average", fMRI.norm = mean(fMRI.norm), PET.norm = mean(PET.norm)), by = "region"])
+dtL2.scenarioC <- rbind(dtL.scenarioC[id %in% c(1:3,24),.(region,id,fMRI.norm,PET.norm)],
+                        dtL.scenarioC[,.(id = "Average", fMRI.norm = mean(fMRI.norm), PET.norm = mean(PET.norm)), by = "region"])
+
+dtL2.scenario <- rbind(cbind(scenario = "A", dtL2.scenarioA),
+                       cbind(scenario = "B", dtL2.scenarioB),
+                       cbind(scenario = "C", dtL2.scenarioC))
+dtL2.scenario$id2 <- factor(dtL2.scenario$id,
+                            levels = c(1,2,3,24,"Average"),
+                            labels = c("Patient 1","Patient 2","...","Patient 24","Average"))
+dtL2.scenario$scenario2 <- paste("Scenario", dtL2.scenario$scenario, sep = " ")
+
+figure3.2 <- ggplot(dtL2.scenario, aes(x = PET.norm, y = fMRI.norm))
+figure3.2 <- figure3.2 + geom_point(aes(shape=region,color=region,size=region)) + facet_grid(scenario2~id2)
+figure3.2 <- figure3.2 + scale_shape_manual(values=shape.region,breaks=names(shape.region))
+figure3.2 <- figure3.2 + scale_size_manual(values=2+region.name %in% region.keep, breaks=region.name)
+figure3.2 <- figure3.2 + scale_color_manual(values=color.region,breaks=names(shape.region))
+figure3.2 <- figure3.2 + labs(x = 'Normalized [11C]Cimbi-36 BPND', y = 'Normalized baseline CBF',
+                              shape = "Region", color = "Region", size = "Region")
+figure3.2 <- figure3.2 + theme(text = element_text(size=12), 
+                               axis.line = element_line(linewidth = 1.25),
+                               axis.ticks = element_line(linewidth = 2),
+                               axis.ticks.length=unit(.25, "cm"),
+                               legend.key.size = unit(1,"line"))
+figure3.2
+    
+## ** sub-figure 3
+dtLC.scenarioA <- rbind(dtL.scenarioA[region %in% region.keep])
+dtLC.scenarioB <- rbind(dtL.scenarioB[region %in% region.keep])
+dtLC.scenarioC <- rbind(dtL.scenarioC[region %in% region.keep])
+dtLC.scenario <- rbind(cbind(scenario = "A", dtLC.scenarioA),
+                       cbind(scenario = "B", dtLC.scenarioB),
+                       cbind(scenario = "C", dtLC.scenarioC))
+
+figure3.3a <- ggplot(dtLC.scenario, aes(x = PET, y = fMRI))
+figure3.3a <- figure3.3a + geom_point(size = 2)
+figure3.3a <- figure3.3a + geom_point(size = 5, data = dtLC.scenario[id %in% id.keep])
+figure3.3a <- figure3.3a + geom_text(data = dtLC.scenario[id %in% id.keep], aes(label = id), color = "white", size = 3)
+figure3.3a <- figure3.3a + geom_smooth(method = "lm", se = FALSE, aes(color = region), linewidth = 1.2)
+figure3.3a <- figure3.3a + facet_grid(scenario~region)
+figure3.3a <- figure3.3a + theme(strip.text.y = element_blank())
+figure3.3a <- figure3.3a + scale_color_manual(values = color.region[region.keep], breaks = region.keep)
+figure3.3a <- figure3.3a + guides(color = "none")
+figure3.3a <- figure3.3a + labs(x = '[11C]Cimbi-36 BPND', y = 'Baseline CBF (ml/100g/min)')
+figure3.3a
+ 
+dtLCor.scenario <- rbind(dtL.scenarioA[,.(scenario = "A", estimand = "Correlation", cor=cor(PET,fMRI)),by="region"],
+                         dtL.scenarioB[,.(scenario = "B", estimand = "Correlation", cor=cor(PET,fMRI)),by="region"],
+                         dtL.scenarioC[,.(scenario = "C", estimand = "Correlation", cor=cor(PET,fMRI)),by="region"])
+dtLCor.scenario[, scenario2 := paste("Scenario", scenario, sep = " ")]
+dtLCor.scenario[, group := round(round.factor*cor,round.dotplot)]
+dtLCor.scenario[, myx := seq(0, by = xspace.dotplot, length.out = .N) - (.N-1)*xspace.dotplot/2, by = c("group","scenario")]
+
+figure3.3b <- ggplot(dtLCor.scenario, aes(y = cor))
+figure3.3b <- figure3.3b + geom_boxplot() + geom_point(aes(x=myx, color = region, size = region))
+figure3.3b <- figure3.3b + geom_point(data = dtLCor.scenario[region %in% region.keep],
+                                      aes(x=myx, color = region, size = region))
+figure3.3b <- figure3.3b + xlab("")
+figure3.3b <- figure3.3b + facet_grid(scenario2~estimand)
+figure3.3b <- figure3.3b + scale_color_manual(values = color.region, breaks = names(color.region))
+figure3.3b <- figure3.3b + scale_size_manual(values= c(2,3)[region.name %in% region.keep+1], breaks = names(color.region))
+figure3.3b <- figure3.3b + guides(shape = "none", size = "none", color = "none")
+figure3.3b <- figure3.3b + theme(axis.title.y=element_blank(),
+                                 axis.ticks.x=element_blank(),
+                                 axis.text.x=element_text(color="white"))
+figure3.3b
+
+figure3.3 <- ggarrange(figure3.3a, figure3.3b + ylab(""), nrow = 1, widths = c(1.5,0.5))
+figure3.3
+
+## * export
+pdf("./figures/figure3.1.pdf", width = 9, height = 6)
+figure3.1
 dev.off()
 
-png("./figures/figure3.png", width = 12, height = 8, units = "in", res = 500)
-figure3
+png("./figures/figure3.1.png", width = 9, height = 6, units = "in", res = 500)
+figure3.1
+dev.off()
+
+pdf("./figures/figure3.2.pdf", width = 9, height = 6)
+figure3.2
+dev.off()
+
+png("./figures/figure3.2.png", width = 9, height = 6, units = "in", res = 500)
+figure3.2
+dev.off()
+
+pdf("./figures/figure3.3.pdf", width = 9, height = 6)
+figure3.3
+dev.off()
+
+png("./figures/figure3.3.png", width = 9, height = 6, units = "in", res = 500)
+figure3.3
 dev.off()
 ##----------------------------------------------------------------------
 ### figure3.R ends here

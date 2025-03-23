@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:43) 
 ## Version: 
-## Last-Updated: mar 23 2025 (11:13) 
+## Last-Updated: mar 23 2025 (12:30) 
 ##           By: Brice Ozenne
-##     Update #: 49
+##     Update #: 52
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -116,6 +116,7 @@ dtL1.scenario$scenario2 <- paste("Scenario", dtL1.scenario$scenario, sep = " ")
 
 figure3.1 <- ggplot(dtL1.scenario, aes(x = PET, y = fMRI))
 figure3.1 <- figure3.1 + geom_point(aes(shape=region,color=region,size=region)) + facet_grid(scenario2~id2)
+figure3.1 <- figure3.1 + geom_smooth(method = "lm", se = FALSE, color = "darkgrey")
 figure3.1 <- figure3.1 + scale_shape_manual(values=shape.region,breaks=names(shape.region))
 figure3.1 <- figure3.1 + scale_size_manual(values=2+region.name %in% region.keep, breaks=region.name)
 figure3.1 <- figure3.1 + scale_color_manual(values=color.region,breaks=names(shape.region))
@@ -146,6 +147,7 @@ dtL2.scenario$scenario2 <- paste("Scenario", dtL2.scenario$scenario, sep = " ")
 
 figure3.2 <- ggplot(dtL2.scenario, aes(x = PET.norm, y = fMRI.norm))
 figure3.2 <- figure3.2 + geom_point(aes(shape=region,color=region,size=region)) + facet_grid(scenario2~id2)
+figure3.2 <- figure3.2 + geom_smooth(method = "lm", se = FALSE, color = "darkgrey")
 figure3.2 <- figure3.2 + scale_shape_manual(values=shape.region,breaks=names(shape.region))
 figure3.2 <- figure3.2 + scale_size_manual(values=2+region.name %in% region.keep, breaks=region.name)
 figure3.2 <- figure3.2 + scale_color_manual(values=color.region,breaks=names(shape.region))
@@ -203,28 +205,13 @@ figure3.3 <- ggarrange(figure3.3a, figure3.3b + ylab(""), nrow = 1, widths = c(1
 figure3.3
 
 ## * export
-pdf("./figures/figure3.1.pdf", width = 9, height = 6)
-figure3.1
-dev.off()
+ggsave(figure3.1, filename = "./figures/figure3.1.pdf", width = 9, height = 6, units = "in")
+ggsave(figure3.1, filename = "./figures/figure3.1.png", width = 9, height = 6, units = "in")
 
-png("./figures/figure3.1.png", width = 9, height = 6, units = "in", res = 500)
-figure3.1
-dev.off()
+ggsave(figure3.2, filename = "./figures/figure3.2.pdf", width = 9, height = 6, units = "in")
+ggsave(figure3.2, filename = "./figures/figure3.2.png", width = 9, height = 6, units = "in")
 
-pdf("./figures/figure3.2.pdf", width = 9, height = 6)
-figure3.2
-dev.off()
-
-png("./figures/figure3.2.png", width = 9, height = 6, units = "in", res = 500)
-figure3.2
-dev.off()
-
-pdf("./figures/figure3.3.pdf", width = 9, height = 6)
-figure3.3
-dev.off()
-
-png("./figures/figure3.3.png", width = 9, height = 6, units = "in", res = 500)
-figure3.3
-dev.off()
+ggsave(figure3.3, filename = "./figures/figure3.3.pdf", width = 9, height = 6, units = "in")
+ggsave(figure3.3, filename = "./figures/figure3.3.png", width = 9, height = 6, units = "in")
 ##----------------------------------------------------------------------
 ### figure3.R ends here

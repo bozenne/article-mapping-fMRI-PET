@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 18 2025 (16:26) 
 ## Version: 
-## Last-Updated: mar 18 2025 (18:33) 
+## Last-Updated: mar 21 2025 (10:52) 
 ##           By: Brice Ozenne
-##     Update #: 3
+##     Update #: 4
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -22,11 +22,14 @@ source("FCT.R")
 dt.simABC <- loadRes("results/simulationABC")
 dt.simDE <- loadRes("results/simulationDE")
 
+
+
 dtS.sim <- rbind(dt.simABC,dt.simDE)[, .(.N, n.NA = sum(is.na(estimate)),
                                          truth = unique(truth),
                                          estimate = mean(estimate, na.rm = TRUE),
                                          std = sd(estimate, na.rm = TRUE),
                                          coverage = mean(between(truth, lower, upper), na.rm = TRUE),
+                                         widthCI = mean(upper-lower, na.rm = TRUE),
                                          rejection.rate = mean(p.value<=0.05, na.rm = TRUE) ),
                                      by = c("scenario","n","method","type")]
 

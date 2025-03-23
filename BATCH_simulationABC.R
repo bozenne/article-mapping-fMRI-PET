@@ -62,7 +62,7 @@ rhoLag.petasl <- 0.1049642  ## param.lmm$rhoLag.petasl
 rho.marginal <- 0.25 ## substantially differs from rho.petasl
 rho.conditional <- 0.5 ## substantially differs from  (rho.petasl-rhoLag.petasl)/sqrt((1-rho.asl)*(1-rho.pet))
 
-grid.scenario <-  expand.grid(n = c(26,1000), scenario = c("A","B","C"), stringsAsFactors = FALSE)
+grid.scenario <-  expand.grid(n = c(24,1000), scenario = c("A","B","C"), stringsAsFactors = FALSE)
 n.grid <- NROW(grid.scenario)
 
 ## * function to execute

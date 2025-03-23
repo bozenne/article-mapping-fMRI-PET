@@ -48,7 +48,7 @@ allSeeds <- 1:nsimAll
 currentSeeds <- (iter_sim-1)*n.sim+(1:n.sim)
 
 ## ** parametrisation
-param.lmmH <- readRDS("results/strategy3-lmmH-param.rds")
+## param.lmmH <- readRDS("results/strategy3-lmmH-param.rds")
 mu.asl <- c("amygdala" = 41.75461171, "antcin" = 63.97868936, "cau" = 51.03709735, "DLPFC" = 61.81180998, "entorhinc" = 37.93286726, "hippocampus" = 48.20552864, "ins" = 61.01470806, "medinffg" = 64.47818102, "occ" = 49.06232099, "orbfrc" = 54.13080092, "parc" = 57.03041177, "postcin" = 56.59856003, "put" = 53.58549712, "senmotc" = 57.3037015, "supfg" = 56.45369853, "suptempg" = 59.07503085, "th" = 47.54133327, "VLPFC" = 64.91376706) ## param.lmmH$mu.asl
 mu.pet <- c("amygdala" = 0.83845228, "antcin" = 1.56758472, "cau" = 0.2503588, "DLPFC" = 1.20843445, "entorhinc" = 0.54554437, "hippocampus" = 0.5574931, "ins" = 1.57503343, "medinffg" = 1.27606528, "occ" = 1.15442359, "orbfrc" = 1.44086414, "parc" = 1.1357671, "postcin" = 1.36909301, "put" = 0.34928437, "senmotc" = 0.84761643, "supfg" = 1.13908271, "suptempg" = 1.47829904, "th" = 0.42230255, "VLPFC" = 1.3450188) ## param.lmmH$mu.pet
 sigma.asl <- c("amygdala" = 8.99965093, "antcin" = 8.09495239, "cau" = 13.20924235, "DLPFC" = 7.69483976, "entorhinc" = 10.67055643, "hippocampus" = 6.35501704, "ins" = 9.1784132, "medinffg" = 7.4033057, "occ" = 9.10531456, "orbfrc" = 10.5240258, "parc" = 6.82659697, "postcin" = 12.80013308, "put" = 9.62445417, "senmotc" = 6.86834497, "supfg" = 7.5001178, "suptempg" = 7.27306258, "th" = 16.99779638, "VLPFC" = 9.12007523)  ## param.lmmH$sigma.asl
@@ -62,7 +62,7 @@ rhoLag.petasl <- 0.1137632   ## param.lmmH$rhoLag.petasl
 rho.marginal <- rho.petasl
 rho.conditional <- (rho.petasl-rhoLag.petasl)/sqrt((1-rho.asl)*(1-rho.pet))
 
-grid.scenario <-  expand.grid(n = c(26,1000), scenario = c("D","E"), stringsAsFactors = FALSE)
+grid.scenario <-  expand.grid(n = c(24,1000), scenario = c("D","E"), stringsAsFactors = FALSE)
 n.grid <- NROW(grid.scenario)
 
 ## * function to execute

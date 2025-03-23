@@ -12,7 +12,7 @@ R CMD BATCH --vanilla BATCH_simulationDE.R output/simulationDE/R-$SLURM_JOB_NAME
 ## go to directory    ## cd x:/article-mapping-fMRI-PET/
                       ## cd /projects/biostat01/people/hpl802/article-mapping-fMRI-PET/
 ## clean outputs      ## rm -r ./output/simulationDE/*
-## clean results      ## rm -r ./Results/simulationDE/*
+## clean results      ## rm -r ./results/simulationDE/*
 ## submission command ## sbatch SUBM_simulationDE.slurm
 
 ## submission output  ## Submitted batch job 41537 (time using C-c t: XX/XX/XX X:XX) 

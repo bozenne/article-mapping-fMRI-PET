@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:43) 
 ## Version: 
-## Last-Updated: mar 18 2025 (11:46) 
+## Last-Updated: mar 21 2025 (10:04) 
 ##           By: Brice Ozenne
-##     Update #: 25
+##     Update #: 27
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -28,7 +28,7 @@ n.region <- 18
 ## * Analysis
 
 ## ** Scenario A
-dtL.scenarioA <- simData(seed = 1, n.obs = 26,
+dtL.scenarioA <- simData(seed = 1, n.obs = 24,
                          mu.PET = rep(4.8,n.region),
                          mu.fMRI = 1+rep(5,n.region),
                          rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.25, rho.conditional = 0.5,
@@ -65,7 +65,7 @@ runCor(PET + fMRI ~ region|id, data = dtL1000.scenarioA)[type!="latent"]
 ## 8:           lmm conditional 0.5025487 0.49122076 0.5137068 0.00000000
 
 ## ** Scenario B
-dtL.scenarioB <- simData(seed = 1,
+dtL.scenarioB <- simData(seed = 1, n.obs = 24,
                          mu.PET = 1:n.region/2,
                          mu.fMRI = 1+5+(1:n.region)/5,
                          rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0, rho.conditional = 0)
@@ -100,7 +100,7 @@ runCor(PET + fMRI ~ region|id, data = dtL1000.scenarioB)[type!="latent"]
 ## 8:           lmm conditional  0.003255548 -0.01178367 0.01829329 6.713760e-01
 
 ## ** Scenario C
-dtL.scenarioC <- simData(seed = 1,
+dtL.scenarioC <- simData(seed = 1, n.obs = 24,
                          mu.PET = 1:n.region/2,
                          mu.fMRI = 1+5+(1:n.region)/5,
                          rho.PET = 0.8, rho.fMRI = 0.6, rho.marginal = 0.25, rho.conditional = 0.5)

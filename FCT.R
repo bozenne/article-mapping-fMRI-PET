@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:40) 
 ## Version: 
-## Last-Updated: mar 18 2025 (16:26) 
+## Last-Updated: mar 21 2025 (10:11) 
 ##           By: Brice Ozenne
-##     Update #: 123
+##     Update #: 126
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -44,7 +44,7 @@
 ##' dfS
 
 ## * simData (code)
-simData <- function(seed, mu.PET, mu.fMRI, n.obs = 26, 
+simData <- function(seed, mu.PET, mu.fMRI, n.obs, 
                     rho.PET, rho.fMRI, rho.marginal, rho.conditional,
                     sigma.PET = 1, sigma.fMRI = 5){
 

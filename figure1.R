@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 18 2025 (10:16) 
 ## Version: 
-## Last-Updated: mar 18 2025 (10:52) 
+## Last-Updated: mar 21 2025 (10:09) 
 ##           By: Brice Ozenne
-##     Update #: 4
+##     Update #: 5
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,6 +17,7 @@
 
 library(ggplot2)
 library(ggrepel)
+library(stringr)
 
 ## * load data
 strategy1.cor <- readRDS("results/strategy1.rds")
@@ -25,9 +26,9 @@ region.name <- readRDS("results/regionName.rds")
 
 ## * prepare figure
 nsig <- 2
-sub.text.corr <- paste0('\u03c1 = ', signif(l_corr$estimate,nsig),
-                   ' [', paste(str_pad(signif(l_corr$conf.int,2), width = 4, pad = '0', side = 'right'), collapse = '; '),
-                   ']\np = ', signif(l_corr$p.value,nsig))
+sub.text.corr <- paste0('\u03c1 = ', signif(strategy1.cor$estimate,nsig),
+                   ' [', paste(str_pad(signif(strategy1.cor$conf.int,2), width = 4, pad = '0', side = 'right'), collapse = '; '),
+                   ']\np = ', signif(strategy1.cor$p.value,nsig))
 
 figure1 <- ggplot(cbind(df.2cohorts, region.full = region.name[df.2cohorts$region]), aes(x = pet, y = asl)) 
 figure1 <- figure1 + geom_smooth(method = 'lm', alpha = .8, color = 'black') 

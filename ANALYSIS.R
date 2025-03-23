@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (14:06) 
 ## Version: 
-## Last-Updated: mar 18 2025 (13:28) 
+## Last-Updated: mar 23 2025 (11:31) 
 ##           By: Brice Ozenne
-##     Update #: 69
+##     Update #: 70
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -116,7 +116,47 @@ min(strategy2.cor[,"p.value"])
 NROW(strategy2.cor0)
 ## [1] 18
 
-## ** Strategy 3
+## ** Strategy 3 (without assuming same variance)
+## WARNING: time consuming ~2 min
+system.time(
+    strategy3.corlmmH <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "HCS", df = FALSE)
+)
+
+## split output
+strategy3.corH <- strategy3.corlmmH
+attr(strategy3.corH,"lmm") <- NULL
+strategy3.lmmH <- attr(strategy3.corlmmH,"lmm")
+
+strategy3.corH
+##             estimate     se  df  lower upper p.value
+## marginal      0.1353 0.1314 Inf -0.125 0.379   0.309
+## conditional   0.0574 0.0557 Inf -0.052 0.165   0.304
+## latent        0.1847 0.2090 Inf -0.233 0.545   0.388
+
+## * Extra analyses
+
+## ** Strategy 3 (simplified)
+dt.joint <- as.data.table(df.joint)
+dt.joint[,asl.norm := scale(asl), by = "region"]
+dt.joint[,pet.norm := scale(pet), by = "region"]
+
+dtS.joint <- dt.joint[, .(cor = cor(asl.norm, pet.norm, use = "pairwise")), by = "cimbi"]
+t.test(dtS.joint$cor)
+## 	One Sample t-test
+
+## data:  dtS.joint$cor
+## t = 0.55879, df = 23, p-value = 0.5817
+## alternative hypothesis: true mean is not equal to 0
+## 95 percent confidence interval:
+##  -0.08617488  0.14995943
+## sample estimates:
+##  mean of x 
+## 0.03189227 
+
+##  4: averageIdNorm conditional 0.03189227 -0.07990364 0.1428958 5.765669e-01
+
+
+## ** Strategy 3 (assuming constant variance over regions but not over modalities)
 strategy3.corlmm <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "CS", df = FALSE)
 
 ## split output
@@ -144,45 +184,6 @@ model.tables(strategy3.lmm, effects = c("variance","correlation"))
 ## rho1          0.48151823 0.080286274  5.702418  0.25983972  0.65498593 2.776387e-03
 ## rho(1,2,dt=1) 0.10496416 0.119125262  5.726731 -0.19047218  0.38296658 4.169382e-01
 ## rho2          0.63824446 0.072511481  8.241502  0.44182255  0.77627125 2.366809e-04
-
-## * Extra analyses
-
-## ** Strategy 3 (simplified)
-dt.joint <- as.data.table(df.joint)
-dt.joint[,asl.norm := scale(asl), by = "region"]
-dt.joint[,pet.norm := scale(pet), by = "region"]
-
-dtS.joint <- dt.joint[, .(cor = cor(asl.norm, pet.norm, use = "pairwise")), by = "cimbi"]
-t.test(dtS.joint$cor)
-## 	One Sample t-test
-
-## data:  dtS.joint$cor
-## t = 0.55879, df = 23, p-value = 0.5817
-## alternative hypothesis: true mean is not equal to 0
-## 95 percent confidence interval:
-##  -0.08617488  0.14995943
-## sample estimates:
-##  mean of x 
-## 0.03189227 
-
-##  4: averageIdNorm conditional 0.03189227 -0.07990364 0.1428958 5.765669e-01
-
-## ** Strategy 3 without assuming same variance
-## WARNING: time consuming ~2 min
-system.time(
-    strategy3.corlmmH <- partialCor(asl+pet~region, repetition = ~region|cimbi, data = df.joint, structure = "HCS", df = FALSE)
-)
-
-## split output
-strategy3.corH <- strategy3.corlmmH
-attr(strategy3.corH,"lmm") <- NULL
-strategy3.lmmH <- attr(strategy3.corlmmH,"lmm")
-
-strategy3.corH
-##             estimate     se  df  lower upper p.value
-## marginal      0.1353 0.1314 Inf -0.125 0.379   0.309
-## conditional   0.0574 0.0557 Inf -0.052 0.165   0.304
-## latent        0.1847 0.2090 Inf -0.233 0.545   0.388
 
 ## * Gather summary statistics for parametrizing simulations
 gridASL.region <- data.frame(CCvariableCC = "asl", region = sort(names(region.name)))

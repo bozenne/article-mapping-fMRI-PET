@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 18 2025 (10:54) 
 ## Version: 
-## Last-Updated: mar 18 2025 (12:22) 
+## Last-Updated: mar 23 2025 (11:45) 
 ##           By: Brice Ozenne
-##     Update #: 3
+##     Update #: 4
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -20,7 +20,7 @@ library(flextable)
 
 ## * load data
 strategy2.cor <- readRDS("results/strategy2.rds")
-strategy3.cor <- readRDS("results/strategy3.rds")
+strategy3.cor <- readRDS("results/strategy3H.rds")
 region.name <- readRDS("results/regionName.rds")
 
 ## * prepare table

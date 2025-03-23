@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: mar 18 2025 (10:26) 
 ## Version: 
-## Last-Updated: mar 18 2025 (10:52) 
+## Last-Updated: mar 23 2025 (11:45) 
 ##           By: Brice Ozenne
-##     Update #: 5
+##     Update #: 6
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -19,7 +19,7 @@ library(ggplot2)
 
 ## * load data
 strategy2.cor <- readRDS("results/strategy2.rds")
-strategy3.cor <- readRDS("results/strategy3.rds")
+strategy3.cor <- readRDS("results/strategy3H.rds")
 region.name <- readRDS("results/regionName.rds")
 
 

@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (11:40) 
 ## Version: 
-## Last-Updated: mar 21 2025 (10:11) 
+## Last-Updated: jun 20 2025 (12:44) 
 ##           By: Brice Ozenne
-##     Update #: 126
+##     Update #: 146
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -360,7 +360,7 @@ plotCor <- function(data, type.norm, n.id = 4, widths = c(1.5,0.5), round.dotplo
     return(ggAll)
 }
 
-## * Collect simulation results
+## * loadRes (collect simulation results)
 loadRes <- function(path, tempo.file = FALSE, type = NULL,
                     export.attribute = NULL, trace = 2, space = "     "){
     all.files <- list.files(path)
@@ -416,6 +416,53 @@ loadRes <- function(path, tempo.file = FALSE, type = NULL,
         cat(space,length(ls.out)," files, with from ",min(Urow)," to ",max(Urow)," lines \n\n",sep="")
     }
     return(out)
+}
+
+## * randomSplit
+##' @description  Randomly split a dataset in two
+##' @param data [data.frame]
+##' @param cluster [character] name of the column identifying the unique replicates
+##' @param size [integer,>0] number of independent replicates in the first split.
+##' @param seed [interger, >0] Initial state of the random number generator. For reproducibility.
+randomSplitHalf <- function(data, cluster, size, seed = NULL){
+
+    ## ** normalize user input
+    if(cluster %in% names(data) == FALSE){
+        stop("Argument \'cluster\' does not match any of the columns of argument \'data\'. \n")
+    }
+
+    seq.id <- data[[cluster]]
+    Useq.id <- unique(seq.id)
+
+    if(length(size)==1){
+        if(size>=length(Useq.id)){
+            stop("Argument \'size\' should be strictly smaller than the number of independent replicates in argument \'data\'. \n")
+        }
+        size <- c(size,length(Useq.id)-size)
+    }else if(length(size)==2){
+        if(sum(size)>length(Useq.id)){
+            stop("The sum of the elements of argument \'size\' should not exceed the number of independent replicates in argument \'data\'. \n")
+        }
+    }else{
+        stop("Argument \'size\' should have length one or two. \n")
+    }
+    
+    ## ** split
+    if(!is.null(seed)){
+        set.seed(seed)
+    }
+    seq.id1 <- sample(Useq.id, size = size[1], replace = FALSE)
+    seq.id2 <- setdiff(Useq.id,seq.id1)[1:size[2]]
+    if(data.table::is.data.table(data)){
+        out <- data.table::copy(data)
+    }else{
+        out <- data
+    }
+    out$cohort <- ifelse(data[[cluster]] %in% seq.id1,1, ifelse(data[[cluster]] %in% seq.id2,2,NA))
+    out$cohort.asl <- ifelse(data[[cluster]] %in% seq.id1,NA,data$asl)
+    out$cohort.pet <- ifelse(data[[cluster]] %in% seq.id2,NA,data$pet)
+
+    return(out[!is.na(out$cohort),,drop=FALSE])
 }
 
 ##----------------------------------------------------------------------

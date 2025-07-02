@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jun 20 2025 (11:01) 
 ## Version: 
-## Last-Updated: jun 20 2025 (17:28) 
+## Last-Updated: jun 25 2025 (17:57) 
 ##           By: Brice Ozenne
-##     Update #: 22
+##     Update #: 56
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -85,6 +85,24 @@ sort(sample.int(24, size = 6, replace = FALSE))
 df.joint1 <- df.joint[df.joint$cimbi %in% unique(df.joint$cimbi)[c(2,7,9,11,15,23)],]
 df.joint2 <- df.joint[df.joint$cimbi %in% unique(df.joint$cimbi)[c(1,3:6,8)],]
 
+runCor(asl + pet ~ region|cimbi, data = df.joint1)[type!="latent"]
+##           method        type  estimate       lower     upper      p.value
+## 1: averageSignal     unclear 0.6939579  0.33592292 0.8767661 1.399779e-03
+
+dfmean.cohort1 <- aggregate(cbind(pet,asl)~region, data = df.joint1,
+                            FUN = "mean", na.action = na.pass, na.rm = TRUE)
+cor.test(dfmean.cohort1$pet, dfmean.cohort1$asl)
+## 	Pearson's product-moment correlation
+
+## data:  dfmean.cohort1$pet and dfmean.cohort1$asl
+## t = 3.8552, df = 16, p-value = 0.0014
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  0.3359229 0.8767661
+## sample estimates:
+##       cor 
+## 0.6939579 
+
 dfmean.cohort12 <- merge(aggregate(pet~region, data = df.joint1, FUN = "mean", na.action = na.pass, na.rm = TRUE),
                          aggregate(asl~region, data = df.joint2, FUN = "mean", na.action = na.pass, na.rm = TRUE),
                          by="region")
@@ -115,19 +133,6 @@ cor.test(dfmean.cohort21$pet, dfmean.cohort21$asl)
 ##       cor 
 ## 0.6486441 
 
-dfmean.cohort1 <- aggregate(cbind(pet,asl)~region, data = df.joint1,
-                            FUN = "mean", na.action = na.pass, na.rm = TRUE)
-cor.test(dfmean.cohort1$pet, dfmean.cohort1$asl)
-## 	Pearson's product-moment correlation
-
-## data:  dfmean.cohort1$pet and dfmean.cohort1$asl
-## t = 3.8552, df = 16, p-value = 0.0014
-## alternative hypothesis: true correlation is not equal to 0
-## 95 percent confidence interval:
-##  0.3359229 0.8767661
-## sample estimates:
-##       cor 
-## 0.6939579 
 
 dfmean.cohort2 <- aggregate(cbind(pet,asl)~region, data = df.joint2,
                             FUN = "mean", na.action = na.pass, na.rm = TRUE)
@@ -143,7 +148,7 @@ cor.test(dfmean.cohort2$pet, dfmean.cohort2$asl)
 ##       cor 
 ## 0.4065838 
 
-## ** simulation
+## ** repetition over a random subset of folds
 n.split <- 1000
 
 df.split <- do.call(rbind, pblapply(1:n.split, function(iSeed){ ## iSeed <- 1
@@ -215,7 +220,9 @@ gg.split2abs
 gg.splitAll <- ggarrange(gg.split + theme(legend.position = "bottom") + guides(fill = guide_legend(nrow = 2, byrow = TRUE)), gg.split2, gg.split2abs, nrow = 1)
 
 
-## ** export
+
+
+## * export
 ggsave(gg.splitAll, filename = file.path("figures","figureReviewer.png"),
        width = 12, height = 5)
 

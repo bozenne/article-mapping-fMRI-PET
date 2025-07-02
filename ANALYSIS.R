@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: jan 22 2025 (14:06) 
 ## Version: 
-## Last-Updated: mar 23 2025 (11:31) 
+## Last-Updated: jul  2 2025 (13:56) 
 ##           By: Brice Ozenne
-##     Update #: 70
+##     Update #: 71
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -17,6 +17,7 @@
 
 ## * load code
 library(data.table)
+library(pbapply)
 library(LMMstar)
 source("cor.testIID.R")
 source("FCT.R")
@@ -59,7 +60,7 @@ strategyAll.cor
 ## 7:           lmm    marginal 0.13819072 -0.10048466 0.3618267 2.558514e-01
 ## 8:           lmm conditional 0.07672043 -0.03011947 0.1818271 1.591055e-01
 
-## ** Strategy 1
+## ** Strategy 1 (single cohort)
 df.2cohorts <- aggregate(cbind(pet,asl)~region, data = df.joint,
                          FUN = "mean", na.action = na.pass, na.rm = TRUE)
 
@@ -75,6 +76,23 @@ strategy1.cor
 ## sample estimates:
 ##       cor 
 ## 0.6716096 
+
+## ** Strategy 2 (two cohorts)
+
+n.split <- 1e3
+df.split <- do.call(rbind, pblapply(1:n.split, function(iSeed){ ## iSeed <- 1
+    iData <- randomSplitHalf(df.joint, cluster = "cimbi", size = c(12,12), seed = iSeed)
+    iDataMean.diff <- aggregate(cbind(cohort.pet,cohort.asl)~region, data = iData,
+                                FUN = "mean", na.action = na.pass, na.rm = TRUE)
+    iCor.diff <- cor.test(x = iDataMean.diff$cohort.pet, y = iDataMean.diff$cohort.asl)
+    return(data.frame(seed = iSeed, estimate = iCor.diff$estimate, lower = iCor.diff$conf.int[1], upper = iCor.diff$conf.int[2], p.value = iCor.diff$p.value))    
+})) ## elapsed=20s  
+quantile(df.split$estimate, c(0,0.5,1))
+##        0%       50%      100% 
+## 0.5046708 0.6592485 0.7943622 
+quantile(df.split$p.value, c(0,0.5,1))
+##           0%          50%         100% 
+## 8.240878e-05 2.920119e-03 3.268297e-02 
 
 ## ** Strategy 2
 ls.cor <- by(df.joint, INDICES = df.joint$region, FUN = function(data){cor.test(x = data$pet, y = data$asl, use.na = "pairwise")})

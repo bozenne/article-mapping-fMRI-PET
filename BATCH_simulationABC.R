@@ -62,7 +62,7 @@ rhoLag.petasl <- 0.1049642  ## param.lmm$rhoLag.petasl
 rho.marginal <- 0.25 ## substantially differs from rho.petasl
 rho.conditional <- 0.5 ## substantially differs from  (rho.petasl-rhoLag.petasl)/sqrt((1-rho.asl)*(1-rho.pet))
 
-grid.scenario <-  expand.grid(n = c(24,1000), scenario = c("A","B","C"), stringsAsFactors = FALSE)
+grid.scenario <-  expand.grid(n = c(6,12,24,1000), scenario = c("A","B","C"), stringsAsFactors = FALSE)
 n.grid <- NROW(grid.scenario)
 
 ## * function to execute
@@ -96,6 +96,22 @@ for(iSim in 1:n.sim){ ## iSim <- 1
 
         iRes <- cbind(seed = iSeed, n = iN.obs, scenario = iScenario, 
                       runCor(PET + fMRI ~ region|id, data = iData)[type!="latent"])
+
+        ## -------------
+        iData2 <- simData(seed = nsimAll + iSeed, n.obs = iN.obs,
+                          mu.PET = iMu.PET,
+                          mu.fMRI = iMu.fMRI,
+                          rho.PET = rho.pet, rho.fMRI = rho.asl, rho.marginal = iRho.marginal, rho.conditional = iRho.conditional,
+                          sigma.PET = sigma.pet, sigma.fMRI = sigma.asl)
+        iData2.mean <- merge(aggregate(PET~region, data = iData, FUN = "mean"),
+                             aggregate(fMRI~region, data = iData2, FUN = "mean"),
+                             by="region")
+        iCor <- cor.test(iData2.mean$PET, iData2.mean$fMRI)
+        iRes <- rbind(iRes,
+                      data.table(seed = iSeed, n = iN.obs, scenario = iScenario, method = "averageSignal2", type = "unclear",
+                                 estimate = iCor$estimate, lower = iCor$conf.int[1], upper = iCor$conf.int[2], p.value = iCor$p.value)
+                      )
+        ## -------------
         iRes$truth <- c(unclear = iRho.conditional, marginal = iRho.marginal, conditional = iRho.conditional)[iRes$type]
 
         res <- rbind(res, iRes)

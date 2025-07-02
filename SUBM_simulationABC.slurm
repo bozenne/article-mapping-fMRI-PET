@@ -15,7 +15,7 @@ R CMD BATCH --vanilla BATCH_simulationABC.R output/simulationABC/R-$SLURM_JOB_NA
 ## clean results      ## rm -r ./results/simulationABC/*
 ## submission command ## sbatch SUBM_simulationABC.slurm
 
-## submission output  ## Submitted batch job 41537 (time using C-c t: XX/XX/XX X:XX) 
+## submission output  ## Submitted batch job 7965453 (time using C-c t: onsdag 25-07-02 at 10:42) 
 
 ## init               ## module module load gcc/11.2.0 R/4.1.2
                       ## cat .bash_profile (in the root directory on the server to visualize the current configuration)

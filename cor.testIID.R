@@ -3,9 +3,9 @@
 ## Author: Brice Ozenne
 ## Created: feb  4 2025 (13:04) 
 ## Version: 
-## Last-Updated: feb  7 2025 (10:57) 
+## Last-Updated: jun 24 2025 (15:19) 
 ##           By: Brice Ozenne
-##     Update #: 35
+##     Update #: 40
 ##----------------------------------------------------------------------
 ## 
 ### Commentary: 
@@ -54,7 +54,7 @@ cor.testIID <- function(x, y, conf.level = 0.95, se = "model", transform = TRUE,
 
 
     se <- match.arg(se, c("model","robust"))
-    
+
     ## ** take care of missing data
     if(any(is.na(x)) || any(is.na(y))){
         out <- cor.testIID(x[!is.na(x) & !is.na(y)],y[!is.na(x) & !is.na(y)])
@@ -109,8 +109,7 @@ cor.testIID <- function(x, y, conf.level = 0.95, se = "model", transform = TRUE,
 
     out$estimate[] <- e.cor
     out$iid <- cbind(original = IF.rho, atanh = IF.rho/(1-e.cor^2))
-    if(se == "model"){
-        
+    if(se == "model" && !is.null(out$conf.int)){ ## NOTE: conf.int is NULL with 4 or less observations
         sigmaATANH.model <- (atanh(out$conf.int)[2] - atanh(out$estimate))/qnorm(upper.level)
         ## sigmaATANH.model - sqrt(1/(n.obs - 3))
         sigmaATANH.robust <- sqrt(sum(out$iid[,2]^2))/n.obs
